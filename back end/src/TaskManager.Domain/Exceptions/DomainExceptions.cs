@@ -15,6 +15,8 @@ namespace TaskManager.Domain.Exceptions
         public class NotFoundException(string message) : DomainException(message); // 404
         public class ConflictException(string message) : DomainException(message); // 409
 
+        public class UnauthorizedException(string message) : DomainException(message); // 401
+
         public sealed class InvalidStatusTransitionException(TaskItemStatus from, TaskItemStatus to)
             : DomainValidationException($"Cannot change status from {from} to {to}. Status can only move forward: Pending → InProgress → Done.");
 

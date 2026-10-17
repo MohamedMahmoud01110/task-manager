@@ -45,7 +45,30 @@ public static class AuthExtensions
                         {
                             ctx.Fail("User no longer exists.");
                         }
-                    }
+                    },
+                    OnChallenge = async ctx =>
+                    {
+                        ctx.HandleResponse();
+                        ctx.Response.StatusCode = 401;
+                        await ctx.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+                        {
+                            Status = 401,
+                            Title = "Unauthorized",
+                            Detail = "Authentication is required or the token is invalid.",
+                            Instance = ctx.Request.Path
+                        }, options: null, contentType: "application/problem+json");
+                    },
+                    OnForbidden = async ctx =>
+                    {
+                        ctx.Response.StatusCode = 403;
+                        await ctx.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+                        {
+                            Status = 403,
+                            Title = "Forbidden",
+                            Detail = "You do not have permission to perform this action.",
+                            Instance = ctx.Request.Path
+                        }, options: null, contentType: "application/problem+json");
+                    },
                 };
             });
 
