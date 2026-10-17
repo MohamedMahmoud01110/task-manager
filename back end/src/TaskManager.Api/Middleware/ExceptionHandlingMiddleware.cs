@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using TaskManager.Domain.Exceptions;
 using static TaskManager.Domain.Exceptions.DomainExceptions;
 
@@ -20,8 +21,9 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         var (status, title, detail, errors) = ex switch
         {
             ValidationException v => (400, "Validation failed", "One or more validation errors occurred.",
-                v.Errors.GroupBy(e => e.PropertyName)
-                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())),
+               v.Errors.GroupBy(e => string.IsNullOrEmpty(e.PropertyName) ? "request" : JsonNamingPolicy.CamelCase.ConvertName(e.PropertyName))
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).Distinct().ToArray())),
+
             UnauthorizedException u => (401, "Unauthorized", u.Message, null),
             NotFoundException n => (404, "Not found", n.Message, null),
             ConflictException c => (409, "Conflict", c.Message, null),

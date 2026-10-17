@@ -1,10 +1,11 @@
-﻿using Microsoft.OpenApi.Models;
-using FluentValidation;
+﻿using FluentValidation;
+using Microsoft.OpenApi.Models;
 using TaskManager.Api.Filters;
 using TaskManager.Api.Services;
 using TaskManager.Application.Abstractions;
 using TaskManager.Application.Auth;
-
+using TaskManager.Application.Tasks;
+using TaskManager.Application.Users;
 namespace TaskManager.Api.Extensions;
 
 public static class ApiExtensions
@@ -14,7 +15,8 @@ public static class ApiExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<AuthService>();
-
+        services.AddScoped<TaskService>();
+        services.AddScoped<UserAdminService>();
         services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
         services.AddControllers(o => o.Filters.Add<ValidationFilter>())

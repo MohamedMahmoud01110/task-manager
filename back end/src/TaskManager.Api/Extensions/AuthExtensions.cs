@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TaskManager.Infrastructure.Auth;
 using TaskManager.Infrastructure.Persistence;
-
 namespace TaskManager.Api.Extensions;
 
 public static class AuthExtensions
@@ -73,6 +72,7 @@ public static class AuthExtensions
             });
 
         services.AddAuthorization();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, TaskManager.Api.Middleware.ProblemDetailsAuthorizationHandler>();
         return services;
     }
 }
