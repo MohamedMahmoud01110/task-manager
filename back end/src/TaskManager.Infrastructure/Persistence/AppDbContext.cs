@@ -1,5 +1,4 @@
-﻿// Infrastructure/Persistence/AppDbContext.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TaskManager.Domain.Entities;
 
 namespace TaskManager.Infrastructure.Persistence;

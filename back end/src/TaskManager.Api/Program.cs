@@ -1,4 +1,6 @@
+using TaskManager.Api.Extensions;
 using TaskManager.Infrastructure;
+using TaskManager.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +11,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddJwtAuth(builder.Configuration);
+
 var app = builder.Build();
+
+await DbSeeder.SeedAsync(app.Services);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -19,6 +25,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// ... swagger ...
+app.UseAuthentication();                               // BEFORE UseAuthorization
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
 
 app.UseAuthorization();
 

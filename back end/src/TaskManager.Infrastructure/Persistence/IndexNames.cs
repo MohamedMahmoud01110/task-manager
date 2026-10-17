@@ -1,5 +1,4 @@
-﻿// Infrastructure/Persistence/IndexNames.cs
-namespace TaskManager.Infrastructure.Persistence;
+﻿namespace TaskManager.Infrastructure.Persistence;
 
 public static class IndexNames
 {

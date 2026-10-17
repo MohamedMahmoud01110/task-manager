@@ -1,5 +1,4 @@
-﻿// Infrastructure/Persistence/Configurations/TaskItemConfiguration.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TaskManager.Domain.Entities;
 
