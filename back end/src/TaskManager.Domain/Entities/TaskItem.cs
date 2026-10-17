@@ -18,6 +18,7 @@ public sealed class TaskItem
     public string? Description { get; private set; }
     public TaskItemStatus Status { get; private set; }
     public TaskPriority Priority { get; private set; }
+    public uint Version { get; private set; } // optimistic concurrency token (maps to PostgreSQL xmin)
     public DateTime? DueDate { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateOnly CreatedDate { get; private set; }
