@@ -13,7 +13,7 @@ public record TaskDto(
     Guid Id, string Title, string? Description,
     TaskItemStatus Status, TaskPriority Priority,
     DateTime? DueDate, DateTime CreatedAt, DateTime UpdatedAt,
-    bool IsOverdue, TaskItemStatus? NextAllowedStatus);
+    bool IsOverdue, IReadOnlyList<TaskItemStatus> AllowedNextStatuses);
 
 public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount, int TotalPages);
 

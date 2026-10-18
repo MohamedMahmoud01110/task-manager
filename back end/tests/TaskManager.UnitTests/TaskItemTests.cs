@@ -17,8 +17,8 @@ public class TaskItemTests
 
     // ---------- Duplicate-title key ----------
     [Theory]
-    [InlineData("Buy milk", "buy milk")]
-    [InlineData("  Buy milk  ", "BUY MILK")]
+    [InlineData("Buy creatine", "buy creatine")]
+    [InlineData("  Buy creatine  ", "BUY CREATINE")]
     public void Titles_differing_only_by_case_or_edge_spaces_produce_the_same_key(string a, string b)
     {
         Assert.Equal(NewTask(a).NormalizedTitle, NewTask(b).NormalizedTitle);
@@ -51,38 +51,52 @@ public class TaskItemTests
     }
 
     // ---------- Status workflow ----------
-    [Fact]
-    public void Status_moves_forward_through_the_workflow()
+    private static TaskItem TaskIn(TaskItemStatus status)
     {
         var task = NewTask();
-        task.ChangeStatus(TaskItemStatus.InProgress, Now);
-        task.ChangeStatus(TaskItemStatus.Done, Now);
-        Assert.Equal(TaskItemStatus.Done, task.Status);
+        if (status != TaskItemStatus.Pending) task.ChangeStatus(status, Now);
+        return task;
+    }
+
+    [Theory]
+    [InlineData(TaskItemStatus.Pending, TaskItemStatus.InProgress)]
+    [InlineData(TaskItemStatus.InProgress, TaskItemStatus.Done)]
+    [InlineData(TaskItemStatus.Pending, TaskItemStatus.Done)] // user finishes before the worker runs
+    public void Forward_transitions_are_allowed(TaskItemStatus from, TaskItemStatus to)
+    {
+        var task = TaskIn(from);
+        task.ChangeStatus(to, Now);
+        Assert.Equal(to, task.Status);
     }
 
     [Theory]
     [InlineData(TaskItemStatus.Pending, TaskItemStatus.Pending)]
-    [InlineData(TaskItemStatus.Pending, TaskItemStatus.Done)]   // skipping is not allowed
+    [InlineData(TaskItemStatus.InProgress, TaskItemStatus.InProgress)]
     [InlineData(TaskItemStatus.InProgress, TaskItemStatus.Pending)]
+    [InlineData(TaskItemStatus.Done, TaskItemStatus.Done)]
     [InlineData(TaskItemStatus.Done, TaskItemStatus.InProgress)]
     [InlineData(TaskItemStatus.Done, TaskItemStatus.Pending)]
-    public void Invalid_transitions_are_rejected(TaskItemStatus from, TaskItemStatus to)
+    public void Backward_or_repeated_transitions_are_rejected(TaskItemStatus from, TaskItemStatus to)
     {
-        var task = NewTask();
-        if (from >= TaskItemStatus.InProgress) task.ChangeStatus(TaskItemStatus.InProgress, Now);
-        if (from == TaskItemStatus.Done) task.ChangeStatus(TaskItemStatus.Done, Now);
-
+        var task = TaskIn(from);
         Assert.Throws<InvalidStatusTransitionException>(() => task.ChangeStatus(to, Now));
         Assert.Equal(from, task.Status); // unchanged
     }
 
     [Fact]
-    public void Done_task_has_no_next_status()
+    public void Undefined_status_value_is_rejected()
     {
         var task = NewTask();
-        task.ChangeStatus(TaskItemStatus.InProgress, Now);
-        task.ChangeStatus(TaskItemStatus.Done, Now);
-        Assert.Null(task.NextAllowedStatus);
+        Assert.Throws<InvalidStatusTransitionException>(() => task.ChangeStatus((TaskItemStatus)99, Now));
+    }
+
+    [Theory]
+    [InlineData(TaskItemStatus.Pending, new[] { TaskItemStatus.InProgress, TaskItemStatus.Done })]
+    [InlineData(TaskItemStatus.InProgress, new[] { TaskItemStatus.Done })]
+    [InlineData(TaskItemStatus.Done, new TaskItemStatus[0])]
+    public void Allowed_next_statuses_match_the_workflow(TaskItemStatus current, TaskItemStatus[] expected)
+    {
+        Assert.Equal(expected, TaskIn(current).AllowedNextStatuses);
     }
 
     // ---------- Due date ----------

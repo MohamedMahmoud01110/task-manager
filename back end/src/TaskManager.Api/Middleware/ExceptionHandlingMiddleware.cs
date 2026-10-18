@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
-using TaskManager.Domain.Exceptions;
 using static TaskManager.Domain.Exceptions.DomainExceptions;
-
 namespace TaskManager.Api.Middleware;
 
 public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)

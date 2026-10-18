@@ -69,23 +69,28 @@ public sealed class TaskItem
 
     public void ChangeStatus(TaskItemStatus next, DateTime nowUtc)
     {
-        if (NextAllowedStatus != next)
+        if (!CanMove(Status, next))
             throw new InvalidStatusTransitionException(Status, next);
 
         Status = next;
         UpdatedAt = nowUtc;
     }
 
-    /// <summary>The only status this task may move to (null when Done). The UI uses this too.</summary>
-    public TaskItemStatus? NextAllowedStatus => Status switch
-    {
-        TaskItemStatus.Pending => TaskItemStatus.InProgress,
-        TaskItemStatus.InProgress => TaskItemStatus.Done,
-        _ => null
-    };
+    /// <summary>Statuses this task may move to. The UI shows exactly these.</summary>
+    public IReadOnlyList<TaskItemStatus> AllowedNextStatuses => AllowedNextFor(Status);
 
-    public bool IsOverdue(DateTime nowUtc) =>
-        DueDate is not null && DueDate < nowUtc && Status != TaskItemStatus.Done;
+    public static IReadOnlyList<TaskItemStatus> AllowedNextFor(TaskItemStatus current) =>
+        Enum.GetValues<TaskItemStatus>().Where(s => s > current).ToArray();
+
+    /// <summary>Forward only: the target must be a defined status that comes after the current one.</summary>
+    public static bool CanMove(TaskItemStatus from, TaskItemStatus to) =>
+        Enum.IsDefined(to) && to > from;
+
+    public bool IsOverdue(DateTime nowUtc) => IsOverdue(DueDate, Status, nowUtc);
+
+
+    public static bool IsOverdue(DateTime? dueDate, TaskItemStatus status, DateTime nowUtc) =>
+    dueDate is not null && dueDate < nowUtc && status != TaskItemStatus.Done;
 
     /// <summary>Ownership check. Returns 404 (not 403) so we never reveal that the task exists.</summary>
     public void EnsureOwnedBy(Guid userId)

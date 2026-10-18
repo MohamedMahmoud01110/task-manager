@@ -6,20 +6,28 @@ using static TaskManager.Domain.Exceptions.DomainExceptions;
 
 namespace TaskManager.Application.Tasks;
 
-public sealed class TaskService(ITaskRepository repo, TimeProvider clock)
+public sealed class TaskService(ITaskRepository repo, ITaskCache cache, ITaskQueue queue, TimeProvider clock)
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
 
     public async Task<TaskDto> CreateAsync(Guid userId, CreateTaskRequest r, CancellationToken ct)
     {
         var task = TaskItem.Create(userId, r.Title, r.Description, r.Priority, r.DueDate.ToUtc(), Now);
-        await repo.AddAsync(task, ct);
-        // TODO (worker step): enqueue task.Id for background processing here
+        await repo.AddAsync(task, ct);          // saved first...
+        await queue.EnqueueAsync(task.Id, ct);  // ...then handed to the worker
         return ToDto(task);
     }
 
     public async Task<TaskDto> GetAsync(Guid userId, Guid id, CancellationToken ct)
-        => ToDto(await GetOwnedAsync(userId, id, ct));
+    {
+        var cached = await cache.GetAsync(userId, id);
+        if (cached is not null && cached.UserId == userId)
+            return cached.ToDto(Now);
+
+        var task = await GetOwnedAsync(userId, id, ct);   // ownership check (404 for foreign tasks)
+        await cache.SetAsync(TaskSnapshot.From(task));
+        return ToDto(task);
+    }
 
     public async Task<PagedResult<TaskDto>> ListAsync(Guid userId, TaskListQuery q, CancellationToken ct)
     {
@@ -30,10 +38,10 @@ public sealed class TaskService(ITaskRepository repo, TimeProvider clock)
 
     public async Task<TaskDto> UpdateAsync(Guid userId, Guid id, UpdateTaskRequest r, CancellationToken ct)
     {
-        var task = await GetOwnedAsync(userId, id, ct);
+        var task = await GetOwnedAsync(userId, id, ct);   // writes always read the database, never the cache
         task.UpdateDetails(r.Title, r.Description, r.Priority, r.DueDate.ToUtc(), Now);
         await repo.SaveAsync(ct);
-        // TODO (redis step): invalidate cache for this task
+        await cache.InvalidateAsync(userId, id);
         return ToDto(task);
     }
 
@@ -42,7 +50,7 @@ public sealed class TaskService(ITaskRepository repo, TimeProvider clock)
         var task = await GetOwnedAsync(userId, id, ct);
         task.ChangeStatus(r.Status, Now);
         await repo.SaveAsync(ct);
-        // TODO (redis step): invalidate cache for this task
+        await cache.InvalidateAsync(userId, id);
         return ToDto(task);
     }
 
@@ -51,10 +59,9 @@ public sealed class TaskService(ITaskRepository repo, TimeProvider clock)
         var task = await GetOwnedAsync(userId, id, ct);
         repo.Remove(task);
         await repo.SaveAsync(ct);
-        // TODO (redis step): invalidate cache for this task
+        await cache.InvalidateAsync(userId, id);
     }
 
-    // Ownership is enforced by the domain entity. A foreign task looks exactly like a missing one (404).
     private async Task<TaskItem> GetOwnedAsync(Guid userId, Guid id, CancellationToken ct)
     {
         var task = await repo.GetByIdAsync(id, ct) ?? throw new NotFoundException("Task not found.");
@@ -62,7 +69,5 @@ public sealed class TaskService(ITaskRepository repo, TimeProvider clock)
         return task;
     }
 
-    private TaskDto ToDto(TaskItem t) => new(
-        t.Id, t.Title, t.Description, t.Status, t.Priority, t.DueDate,
-        t.CreatedAt, t.UpdatedAt, t.IsOverdue(Now), t.NextAllowedStatus);
+    private TaskDto ToDto(TaskItem t) => TaskSnapshot.From(t).ToDto(Now);
 }

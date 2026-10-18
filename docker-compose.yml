@@ -22,5 +22,36 @@ services:
     ports:
       - "6379:6379"
 
+  api:
+    profiles: ["full"]
+    build:
+      context: "./back end"
+    container_name: taskmanager-api
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=taskmanager;Username=taskmanager;Password=taskmanager_dev"
+      ConnectionStrings__Redis: "redis:6379"
+      # Demo value only; change for real deployment
+      Jwt__Key: "docker-demo-key-change-me-at-least-32-characters!!"
+      Cors__Origins__0: "http://localhost:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  web:
+    profiles: ["full"]
+    build:
+      context: "./front end"
+      args:
+        VITE_API_URL: "http://localhost:8080"
+    container_name: taskmanager-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
 volumes:
   pgdata:
