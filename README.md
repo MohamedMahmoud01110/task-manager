@@ -298,11 +298,12 @@ Not done: refresh tokens with rotation, SignalR real-time updates (polling is us
 
 ---
 
-
 ## How I used AI tools
 
-- I used **Claude Code** as a pair-programming assistant to help with architecture planning, implementation, and understanding design decisions, particularly around concurrency, caching, and background processing.
-- I used AI assistance to help write and improve unit and integration tests, identify edge cases, and verify expected behavior. I reviewed and ran the tests to check the results.
-- When I encountered issues, I used Claude Code to investigate errors, understand their causes, find suitable NuGet packages or other libraries when needed, and explore possible solutions.
-- I also used it for specific implementation tasks, such as writing date and time handling functions, timezone conversions, and complex regular expressions when appropriate.
-- I reviewed, tested, and refined the generated code, addressed issues discovered during development, and made sure I understood the final implementation rather than relying on generated code without verification.
+- I used **Claude (Anthropic's AI chat assistant)** as a pair-programming and learning assistant to discuss architecture decisions, understand implementation approaches, and explore solutions for concurrency, caching, and background processing.
+
+- I used AI assistance to help develop and improve unit and integration tests and investigate errors encountered during development.
+
+- I consulted Claude when evaluating suitable NuGet packages or libraries and when working through specific implementation details, such as date and time handling and timezone conversions.
+
+- I reviewed the suggestions, implemented and tested the relevant solutions, and refined them based on the results. I am responsible for the final code and have focused on understanding the implementation and its trade-offs.
