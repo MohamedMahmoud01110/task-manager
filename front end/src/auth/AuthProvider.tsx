@@ -50,7 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Restore the session after a page refresh
   useEffect(() => {
     const token = tokenStorage.get();
-    if (!token) return;
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
 
     if (isTokenExpired(token)) {
       endSession(SESSION_EXPIRED);
